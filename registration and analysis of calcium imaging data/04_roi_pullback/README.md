@@ -63,26 +63,6 @@ by any script in this release; see the manuscript's Methods for how they were ma
 `antspy` env: `ants` (ANTsPy), `nibabel`, `numpy`, `scipy`, `tifffile`, plus
 `matplotlib` and `pandas` for the QC script.
 
-## Why this can't be a naive flat crop (tilted-slab geometry)
-
-A native functional plane is physically flat (it's a single optical section), but it
-does **not** map to a single flat z-slice in structural/template space. The stage-02
-functional<->structural affine (`fwd_final_affine.mat`) contains a genuine ~19-degree
-rotation mixing the Y and Z axes, so each native plane maps to a *tilted* plane in
-reference space, spreading across many structural z-indices from one edge of the frame
-to the other. Picking "the nearest matching z-slice" and doing a flat 2D crop would
-silently assume every pixel in the native frame sits at the same reference depth, which
-is wrong -- pixels near the edges of the frame are the most wrong.
-
-The method used instead (in `pull_roi_labels.py`): embed each native plane as a real,
-1-voxel-thick 3D image at its own true (x, y, z) position in the shared coordinate
-frame, then pull the labels backward through the full composed inverse transform chain
-(template -> stage 03 inverse -> structural -> stage 02 inverse) in a single
-`ants.apply_transforms` call, with `interpolator="genericLabel"` (nearest-neighbor,
-since these are integer region IDs that must never be linearly interpolated). This
-evaluates the true tilted 3D geometry per native pixel rather than assuming one shared
-depth for the whole frame.
-
 ## Geometry notes
 
 - The `annotations.nii.gz` volume is voxel-for-voxel identical in shape to the template
@@ -133,13 +113,3 @@ excluded from the suite2p analysis (stage 05) for insufficient signal.
 Region assignment is by majority vote over each cell's full pixel footprint (not just
 its centroid), which is more robust for cells straddling a region boundary; `purity`
 quantifies how clean that vote was for a given cell.
-
-## Known caveat: top-middle rim misalignment
-
-There is a confirmed, unresolved local misalignment specifically in the top-middle
-boundary/rim region of the atlas. It is worst at the deepest included plane (z = 2790)
-and tapers off at shallower depth. Cells physically located in that rim area may show
-inflated "Clear Label" assignments, or occasional wrong-neighbor region assignment.
-This is a localized issue, not a general dataset-wide problem, and can be checked
-visually per-depth via `export_per_plane_qc_with_suite2p_rois.py`'s output for the
-affected planes before trusting region counts drawn from that area.

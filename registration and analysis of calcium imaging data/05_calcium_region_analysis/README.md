@@ -5,12 +5,6 @@ fluorescence traces (stage 1) with cell-to-region assignments (stage 4) to
 compute per-neuron dF/F, z-scores, and significant-transient rates, and to
 produce the figures for manuscript Figure 7.
 
-**Scope note:** the original project directory this was extracted from
-contains roughly 25 analysis/figure scripts. This release includes only the
-5 scripts needed to reproduce the analyses shown in manuscript Figure 7.
-Other exploratory analyses (region synchrony, cohesion, spatial gradients,
-additional raincloud/enrichment variants, per-depth summaries, etc.) are not
-part of this release.
 
 ## Scripts and run order
 
@@ -36,27 +30,6 @@ part of this release.
 | I | `manuscript_panels.py` | `fig_mean_dff_scatter_violin_A.tif` |
 | J | `manuscript_panels.py` | `raincloud_transients_violin.tif` |
 | K | `enrichment_compact.py` | `fig_enrichment_dumbbell_transients.tif` (`.pdf`) |
-
-**Note on panels G/H:** the manuscript figure shows one representative plane.
-`per_plane_figs.py` reproduces the same method (region-sorted stacked traces
-with a scale bar; mean image with region boundaries and one dot per cell,
-colored to match its trace) but generates it for every one of the 32 planes
-rather than reproducing the exact hand-picked layout used in print (which
-enlarged/numbered a curated 24-cell subset and rotated the circle map 90
-degrees for the print layout). Use the output for the manuscript's chosen
-depth as the closest reproduction of panels G/H; the rest are provided for
-completeness across the dataset.
-
-`manuscript_panels.py` and `enrichment_compact.py` each write several
-additional files that are not used in the manuscript (plain dot-scatter
-panels, skew-based variants, the mean-ΔF/F+skew dumbbell, the strip
-heat-map). These are left in place because they share plotting code with
-the panels that are used, not because they are needed for Figure 7. Note
-also that panels I and J come from the same function
-(`scatter_panel_violin`) but the two output files follow different naming
-conventions (`fig_mean_dff_scatter_violin_A.tif` vs.
-`raincloud_transients_violin.tif`) -- this inconsistency is carried over
-unchanged from the original analysis rather than corrected.
 
 ## Inputs / outputs
 
@@ -92,61 +65,3 @@ package):
 - The Figure 7 panel files listed above, plus the additional
   `manuscript_panels.py` / `enrichment_compact.py` variants noted above.
 
-## Environment / packages
-
-All 5 scripts run in the same environment (referred to here as `antspy`,
-matching the environment name used for registration in stages 2-5):
-`numpy`, `scipy`, `pandas`, `matplotlib`, `tifffile`. `per_plane_figs.py`
-additionally requires `scikit-image` (contour extraction for the circle-map
-region boundaries).
-
-The functional recordings in this dataset use a nuclear-localized GCaMP
-indicator (see stage 1's README for the tau/diameter parameters this
-implies), which is why `run_calcium_region_analysis.py` reads raw `F.npy`
-directly with no neuropil subtraction, and why the baseline windows used
-throughout this stage are wide relative to what is typical for fast
-cytosolic indicators.
-
-## Method summary
-
-**dF/F** (`run_calcium_region_analysis.py`): primary baseline is a centered
-rolling 8th-percentile filter, 40 s window, computed on raw F (percentile
-filter, reflect-padded edges), following the ~8th-percentile sliding-window
-convention used by Dombeck et al. 2010 (Nat Neurosci), CaImAn's
-`detrend_df_f` (`quantileMin=8`), and suite2p's own constant-percentile
-baseline (`prctile_baseline=8`). The 40 s window is much wider than typical
-for fast cytosolic indicators; it is chosen here because the indicator is
-slow (nuclear-localized GCaMP6s, tau ~3.8 s, events lasting 5-15 s) relative
-to the ~120 s recording length. A cross-check baseline
-(multiplicative linear detrend for bleaching, then a static percentile F0)
-is also computed. Both are median-filtered (3 frames, ~2.4 s) after
-converting to percent.
-
-**Significant-transient detection** (`transient_rate.py`): re-derives dF/F
-from raw F using a *symmetric* baseline (linear detrend, then static median
-F0) instead of the rolling-percentile baseline above, because the
-rolling-percentile baseline clips the negative deflections needed to
-calibrate noise. Noise sigma is taken from the noise-dominated lower half of
-the dF/F distribution (median minus the 15.87th percentile, i.e. ~1 sigma
-below center) rather than from a frame-to-frame difference estimator, which
-is deflated by trace autocorrelation by roughly 4x and yields a
-false-positive rate around 50% if used naively. Events are detected with
-`scipy.signal.find_peaks` at `height >= K*sigma`, `prominence >= 1.5*sigma`,
-minimum spacing of 4 frames, minimum width 1 frame; the same detector
-applied to the negated trace gives the false-positive floor. K is swept and
-the smallest K with a dataset-wide false-positive fraction <= 0.10 is
-selected (K = 3 sigma, ~4% false-positive fraction in this dataset).
-
-## Caveats
-
-- **Single animal, descriptive analysis only.** No confidence intervals or
-  effect sizes are computed anywhere in this stage. This is deliberate: a
-  single census of essentially all cells in one chosen, non-random depth
-  series has no population to infer to, so no inferential statistics are
-  reported.
-- **Deep-plane region-assignment uncertainty.** Cells in the deepest
-  included planes (z >= 2680 um, worst at z = 2790 um) sit near a known
-  unresolved atlas-registration gap (see stage 4's README) and may show
-  inflated "Clear Label" assignment or occasional wrong-neighbor region
-  assignment. Treat region assignments in that depth range with more
-  caution than shallower planes.
