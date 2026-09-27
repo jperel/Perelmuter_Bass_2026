@@ -2,13 +2,13 @@
 """
 build_stageB_plane_corrections.py
 =====================================
-Stage 2 of 6 (functional-to-structural registration).
+Stage 2 of 5 (functional-to-structural registration).
 
 Builds and validates the accepted per-plane correction table for the
 residual functional-vs-structural local misalignment that remains after the
 Stage 2 volume-to-volume affine (register_ministack_to_structural.py) and
 that varies with depth -- most likely a small residual rotation-axis error in
-that fit. This is the correction actually consumed downstream, by stage 05's
+that fit. This is the correction actually consumed downstream, by stage 04's
 pull_roi_labels.py (stageB_plane_corrections.csv).
 
 Measurement method and why it changed: earlier versions of this measurement
@@ -45,22 +45,24 @@ EXCLUDED_IDX), an iterative closed-loop procedure:
      all iterations, which guards against any single iteration overshooting.
 
 Reads:
-  - data_for_upload/01_suite2p_preprocessing/mean_images/meanImg_z*.tif
-  - data_for_upload/03_structural_to_template_registration/stage0_geometry_fixed/
-    02F_stack_ras_cropped.nii.gz
-  - data_for_upload/02_functional_to_structural_registration/stage1_ministack/
-    functional_ministack.nii.gz (for header geometry only, via compute_seed_origin)
-  - data_for_upload/02_functional_to_structural_registration/stage2_registration/
-    fwd_final_affine.mat
+  - data_for_upload/mean_images/meanImg_z*.tif
+  - data_for_upload/02F_stack_ras_cropped.nii.gz
+  - data_for_upload/functional_ministack.nii.gz (for header geometry only,
+    via compute_seed_origin)
+  - data_for_upload/fwd_final_affine.mat
 
 Writes:
-  - data_for_upload/02_functional_to_structural_registration/stage2_registration/
-    stageB_plane_corrections.csv (depth, extra_x_um, extra_y_um, n_iterations,
-    match_score, before_px, after_px)
+  - data_for_upload/stageB_plane_corrections.csv (depth, extra_x_um,
+    extra_y_um, n_iterations, match_score, before_px, after_px)
 
 Run order: after register_ministack_to_structural.py. Its companion validation
 script, diag_stageB_block_displacement.py, can be run afterward as a QC check
 across all included planes.
+
+Note on data layout: `data_for_upload/` is a flat folder (Zenodo does not
+preserve directory structure on upload), except for `mean_images/`,
+`roi_labels/`, and `suite2p_output/`, which come from unzipping the three
+archives shipped in the data package -- see the top-level README.
 
 Environment: antspy env (ants, nibabel, numpy, scikit-image, tifffile).
 """
@@ -82,13 +84,11 @@ from register_ministack_to_structural import compute_seed_origin  # noqa: E402
 DATA_ROOT = os.environ.get("PIPELINE_DATA_ROOT") or os.path.normpath(
     os.path.join(os.path.dirname(os.path.abspath(__file__)), "..", "..", "data_for_upload"))
 
-STAGE2_DIR_NAME = "02_functional_to_structural_registration"
-MEAN_IMG_DIR = os.path.join(DATA_ROOT, "01_suite2p_preprocessing", "mean_images")
-STRUCTURAL_PATH = os.path.join(DATA_ROOT, "03_structural_to_template_registration",
-                                "stage0_geometry_fixed", "02F_stack_ras_cropped.nii.gz")
-STAGE_B_AFFINE = os.path.join(DATA_ROOT, STAGE2_DIR_NAME, "stage2_registration", "fwd_final_affine.mat")
-STAGE_B_MINISTACK = os.path.join(DATA_ROOT, STAGE2_DIR_NAME, "stage1_ministack", "functional_ministack.nii.gz")
-OUT_CSV = os.path.join(DATA_ROOT, STAGE2_DIR_NAME, "stage2_registration", "stageB_plane_corrections.csv")
+MEAN_IMG_DIR = os.path.join(DATA_ROOT, "mean_images")
+STRUCTURAL_PATH = os.path.join(DATA_ROOT, "02F_stack_ras_cropped.nii.gz")
+STAGE_B_AFFINE = os.path.join(DATA_ROOT, "fwd_final_affine.mat")
+STAGE_B_MINISTACK = os.path.join(DATA_ROOT, "functional_ministack.nii.gz")
+OUT_CSV = os.path.join(DATA_ROOT, "stageB_plane_corrections.csv")
 
 XY_SPACING_UM = 1.40625
 Z_SPACING_UM = 10.0

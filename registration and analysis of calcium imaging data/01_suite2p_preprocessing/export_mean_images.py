@@ -2,7 +2,7 @@
 """
 export_mean_images.py
 =======================
-Stage 1 of 6 (suite2p preprocessing) -- step 3 of 3 in this folder.
+Stage 1 of 5 (suite2p preprocessing) -- step 3 of 3 in this folder.
 
 Exports suite2p's registered mean image (ops["meanImg"]) for each of the 36
 functional z-planes into a single folder as individual TIFFs, one per plane,
@@ -10,14 +10,19 @@ with filenames labeled by the plane's native z-depth (parsed from the
 "02F_2min_<z>" suite2p output folder name).
 
 Reads:
-    data_for_upload/06_calcium_region_analysis/suite2p_output/<name>/suite2p/plane0/ops.npy
+    data_for_upload/suite2p_output/<name>/suite2p/plane0/ops.npy
     (written by run_suite2p_batch.py, the previous script in this folder).
 
 Writes:
-    data_for_upload/01_suite2p_preprocessing/mean_images/meanImg_z<depth>.tif
+    data_for_upload/mean_images/meanImg_z<depth>.tif
     (36 files). Values are saved as-is (float32, no rescaling/clipping) so
     pixel intensities remain quantitatively meaningful for the downstream
     functional-to-structural registration step (stage 2).
+
+Note on data layout: `data_for_upload/` is a flat folder (Zenodo does not
+preserve directory structure on upload), except for `mean_images/`,
+`roi_labels/`, and `suite2p_output/`, which come from unzipping the three
+archives shipped in the data package -- see the top-level README.
 
 Run order in this folder:
     1. convert_oir_to_tiff.py
@@ -36,8 +41,8 @@ import tifffile
 DATA_ROOT = os.environ.get("PIPELINE_DATA_ROOT") or os.path.normpath(
     os.path.join(os.path.dirname(os.path.abspath(__file__)), "..", "..", "data_for_upload"))
 
-SUITE2P_OUTPUT_DIR = os.path.join(DATA_ROOT, "06_calcium_region_analysis", "suite2p_output")
-OUT_DIR = os.path.join(DATA_ROOT, "01_suite2p_preprocessing", "mean_images")
+SUITE2P_OUTPUT_DIR = os.path.join(DATA_ROOT, "suite2p_output")
+OUT_DIR = os.path.join(DATA_ROOT, "mean_images")
 
 
 def main():

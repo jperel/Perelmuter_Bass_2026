@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 """
-Stage 3 (of 6) - structural-to-template registration: QC overlay.
+Stage 3 (of 5) - structural-to-template registration: QC overlay.
 
 Produces two 2-channel TIFF stacks for visual inspection of the registration in FIJI/
 ImageJ, viewing the fit from both directions:
@@ -13,24 +13,27 @@ ImageJ, viewing the fit from both directions:
    native space (never resampled) + template warped INTO structural space (inverse
    chain: affine inverted, then the inverse warp), limited to the structural stack's own
    planes. This is the complementary view: it shows inverse-warp quality directly on the
-   grid that matters for the downstream ROI pull-back stage (05_roi_pullback), which uses
+   grid that matters for the downstream ROI pull-back stage (04_roi_pullback), which uses
    this same inverse chain to pull template region labels onto native
    functional/structural space, rather than only checking the forward direction on the
    template's grid.
 
-Reads (all under DATA_ROOT/03_structural_to_template_registration/):
-  stage0_geometry_fixed/template_ras.nii.gz
-  stage0_geometry_fixed/02F_stack_ras_cropped.nii.gz
-  stage1_registration/fwd_0GenericAffine.mat
-  stage1_registration/fwd_1Warp.nii.gz
-  stage1_registration/fwd_1InverseWarp.nii.gz
+Reads (all directly under DATA_ROOT):
+  template_ras.nii.gz
+  02F_stack_ras_cropped.nii.gz
+  fwd_0GenericAffine.mat
+  fwd_1Warp.nii.gz
+  fwd_1InverseWarp.nii.gz
 
-Writes (under DATA_ROOT/03_structural_to_template_registration/stage1_registration/qc/):
+Writes (under DATA_ROOT/qc_structural_to_template/):
   check_template_vs_warped_2ch_stack.tif
   check_structural_vs_warped_template_2ch_stack.tif
 
 Run order in this stage: fix_template_geometry.py -> register_structural_to_template.py
 -> qc_overlay.py (this script).
+
+Note on data layout: `data_for_upload/` is a flat folder (Zenodo does not
+preserve directory structure on upload); see the top-level README.
 
 Environment: antspy env (ants, nibabel, numpy, scipy, scikit-image, tifffile).
 """
@@ -44,22 +47,19 @@ import tifffile
 DATA_ROOT = os.environ.get("PIPELINE_DATA_ROOT") or os.path.normpath(
     os.path.join(os.path.dirname(os.path.abspath(__file__)), "..", "..", "data_for_upload"))
 
-STAGE_DIR = os.path.join(DATA_ROOT, "03_structural_to_template_registration")
-GEOM_DIR = os.path.join(STAGE_DIR, "stage0_geometry_fixed")
-REG_DIR = os.path.join(STAGE_DIR, "stage1_registration")
-OUT_DIR = os.path.join(REG_DIR, "qc")
+OUT_DIR = os.path.join(DATA_ROOT, "qc_structural_to_template")
 
-TEMPLATE_PATH = os.path.join(GEOM_DIR, "template_ras.nii.gz")
-STRUCTURAL_PATH = os.path.join(GEOM_DIR, "02F_stack_ras_cropped.nii.gz")
+TEMPLATE_PATH = os.path.join(DATA_ROOT, "template_ras.nii.gz")
+STRUCTURAL_PATH = os.path.join(DATA_ROOT, "02F_stack_ras_cropped.nii.gz")
 
-AFFINE_PATH = os.path.join(REG_DIR, "fwd_0GenericAffine.mat")
-FWDWARP_PATH = os.path.join(REG_DIR, "fwd_1Warp.nii.gz")
-INVWARP_PATH = os.path.join(REG_DIR, "fwd_1InverseWarp.nii.gz")
+AFFINE_PATH = os.path.join(DATA_ROOT, "fwd_0GenericAffine.mat")
+FWDWARP_PATH = os.path.join(DATA_ROOT, "fwd_1Warp.nii.gz")
+INVWARP_PATH = os.path.join(DATA_ROOT, "fwd_1InverseWarp.nii.gz")
 
 
 def main():
     os.makedirs(OUT_DIR, exist_ok=True)
-    print(f"QC for {REG_DIR}")
+    print(f"QC for {DATA_ROOT}")
 
     template = ants.image_read(TEMPLATE_PATH)
     structural = ants.image_read(STRUCTURAL_PATH)

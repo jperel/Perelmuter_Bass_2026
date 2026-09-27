@@ -2,10 +2,10 @@
 """
 register_ministack_to_structural.py
 ======================================
-Stage 2 of 6 (functional-to-structural registration) -- Step 2.
+Stage 2 of 5 (functional-to-structural registration) -- Step 2.
 
 Registers the 36-plane functional mini-stack
-(stage1_ministack/functional_ministack.nii.gz) into the structural stack's
+(functional_ministack.nii.gz) into the structural stack's
 native space (stage 03's stage0_geometry_fixed/02F_stack_ras_cropped.nii.gz)
 as ONE 3D volume-to-volume fit (Rigid, then Affine seeded from the Rigid
 result) -- not 36 independent per-plane fits, since the mini-stack's own
@@ -33,7 +33,7 @@ Masking alone was not sufficient -- with a blind Rigid search, the optimizer
 repeatedly converged on a wildly wrong (but numerically valid) rotation,
 since the mask's irregular shape combined with the GC metric's sparse
 "regular" sampling produces a poorly behaved objective landscape at coarse
-pyramid levels. The fit is instead seeded from stage2_reference/reference_affine.mat,
+pyramid levels. The fit is instead seeded from reference_affine.mat,
 a known-good near-identity result obtained by registering the UNCORRECTED
 mini-stack (which converges reliably on its own, confirmed by QC overlay), so
 the optimizer starts in the right neighborhood instead of searching blind.
@@ -58,25 +58,22 @@ Note for downstream consumers of fwd_final_affine.mat: the fitted affine
 includes a genuine rotation of roughly 19 degrees that mixes the Y and Z
 axes. A native functional plane therefore maps to a TILTED plane in
 structural space, not a flat z-slice -- a naive flat-z-slice lookup is wrong,
-especially near frame edges. Stage 05 (roi_pullback/pull_roi_labels.py)
+especially near frame edges. Stage 04 (roi_pullback/pull_roi_labels.py)
 handles this correctly via a "slab" technique: each native plane is embedded
 as a true 1-voxel-thick 3D image at its own position and pulled through the
 full inverse transform chain in one apply_transforms call.
 
 compute_seed_origin() is imported directly (not transcribed) by
-build_stageB_plane_corrections.py in this same folder, and by stage 05's
+build_stageB_plane_corrections.py in this same folder, and by stage 04's
 pull_roi_labels.py via sys.path -- keep its name and signature stable.
 
 Reads:
-  - data_for_upload/02_functional_to_structural_registration/stage1_ministack/
-    functional_ministack.nii.gz, functional_ministack_mask.nii.gz
-  - data_for_upload/03_structural_to_template_registration/stage0_geometry_fixed/
-    02F_stack_ras_cropped.nii.gz
-  - data_for_upload/02_functional_to_structural_registration/stage2_reference/
-    reference_affine.mat (fixed optimizer seed; see above)
+  - data_for_upload/functional_ministack.nii.gz, functional_ministack_mask.nii.gz
+  - data_for_upload/02F_stack_ras_cropped.nii.gz
+  - data_for_upload/reference_affine.mat (fixed optimizer seed; see above)
 
-Writes (to stage2_registration/):
-  - fwd_final_affine.mat (the accepted result; consumed by stage 05)
+Writes (to data_for_upload/):
+  - fwd_final_affine.mat (the accepted result; consumed by stage 04)
   - functional_ministack_seeded.nii.gz, functional_ministack_mask_seeded.nii.gz
     (intermediate, header-shifted copies of the inputs)
   - rigid_*, fwd_* ANTs transform/log files from the two registration stages
@@ -85,6 +82,9 @@ Writes (to stage2_registration/):
 
 Run order: after build_ministack_mask.py, before
 build_stageB_plane_corrections.py.
+
+Note on data layout: `data_for_upload/` is a flat folder (Zenodo does not
+preserve directory structure on upload); see the top-level README.
 
 Environment: antspy env (ants, nibabel, numpy).
 """
@@ -99,17 +99,14 @@ import numpy as np
 DATA_ROOT = os.environ.get("PIPELINE_DATA_ROOT") or os.path.normpath(
     os.path.join(os.path.dirname(os.path.abspath(__file__)), "..", "..", "data_for_upload"))
 
-STAGE2_DIR_NAME = "02_functional_to_structural_registration"
-STAGE1_DIR = os.path.join(DATA_ROOT, STAGE2_DIR_NAME, "stage1_ministack")
-MINISTACK_PATH = os.path.join(STAGE1_DIR, "functional_ministack.nii.gz")
-MASK_PATH = os.path.join(STAGE1_DIR, "functional_ministack_mask.nii.gz")
-STRUCTURAL_PATH = os.path.join(DATA_ROOT, "03_structural_to_template_registration",
-                                "stage0_geometry_fixed", "02F_stack_ras_cropped.nii.gz")
-OUT_DIR = os.path.join(DATA_ROOT, STAGE2_DIR_NAME, "stage2_registration")
+MINISTACK_PATH = os.path.join(DATA_ROOT, "functional_ministack.nii.gz")
+MASK_PATH = os.path.join(DATA_ROOT, "functional_ministack_mask.nii.gz")
+STRUCTURAL_PATH = os.path.join(DATA_ROOT, "02F_stack_ras_cropped.nii.gz")
+OUT_DIR = DATA_ROOT
 SEEDED_PATH = os.path.join(OUT_DIR, "functional_ministack_seeded.nii.gz")
 SEEDED_MASK_PATH = os.path.join(OUT_DIR, "functional_ministack_mask_seeded.nii.gz")
 OUTPREFIX = os.path.join(OUT_DIR, "fwd_")
-REFERENCE_TRANSFORM = os.path.join(DATA_ROOT, STAGE2_DIR_NAME, "stage2_reference", "reference_affine.mat")
+REFERENCE_TRANSFORM = os.path.join(DATA_ROOT, "reference_affine.mat")
 
 SEED_STRUCTURAL_Z_IDX = 44  # best visual shape match from sanity_check_step1.py
 WORKING_SPACING_UM = 2.0    # common working resolution for the search stage

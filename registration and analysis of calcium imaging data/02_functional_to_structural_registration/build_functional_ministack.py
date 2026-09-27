@@ -2,7 +2,7 @@
 """
 build_functional_ministack.py
 ================================
-Stage 2 of 6 (functional-to-structural registration) -- Step 1.
+Stage 2 of 5 (functional-to-structural registration) -- Step 1.
 
 Stacks the 36 mean images (suite2p's registered mean image per plane -- never
 the raw recordings) into one coherent 3D "mini-stack" NIfTI, spacing
@@ -11,7 +11,7 @@ verify_pixel_size.py (all 36 source files agreed exactly).
 
 By default this reads directly from stage 01's mean_images/. Set
 USE_ALIGNED_PLANES=1 to instead read from this stage's own
-stage1_ministack/aligned_planes/ (produced by correct_interplane_drift.py),
+aligned_planes/ (produced by correct_interplane_drift.py),
 which additionally corrects cross-plane XY stage drift. The functional_ministack.nii.gz
 shipped in data_for_upload was built with USE_ALIGNED_PLANES=1, i.e. run
 correct_interplane_drift.py first, then this script with that environment
@@ -37,18 +37,20 @@ each plane is transposed to (X,Y) before stacking along a new 3rd (Z) axis,
 matching this project's NIfTI axis-order convention.
 
 Reads:
-  - data_for_upload/01_suite2p_preprocessing/mean_images/meanImg_z*.tif, or
-  - data_for_upload/02_functional_to_structural_registration/stage1_ministack/
-    aligned_planes/meanImg_z*.tif (if USE_ALIGNED_PLANES=1)
+  - data_for_upload/mean_images/meanImg_z*.tif, or
+  - data_for_upload/aligned_planes/meanImg_z*.tif (if USE_ALIGNED_PLANES=1)
 
 Writes:
-  - data_for_upload/02_functional_to_structural_registration/stage1_ministack/
-    functional_ministack.nii.gz
-  - data_for_upload/02_functional_to_structural_registration/stage1_ministack/
-    depths_um.txt
+  - data_for_upload/functional_ministack.nii.gz
+  - data_for_upload/depths_um.txt
 
 Run order: after correct_interplane_drift.py (if USE_ALIGNED_PLANES=1), before
 sanity_check_step1.py and build_ministack_mask.py.
+
+Note on data layout: `data_for_upload/` is a flat folder (Zenodo does not
+preserve directory structure on upload), except for `mean_images/`,
+`roi_labels/`, and `suite2p_output/`, which come from unzipping the three
+archives shipped in the data package -- see the top-level README.
 
 Environment: antspy env (nibabel, numpy, tifffile).
 """
@@ -64,10 +66,9 @@ import tifffile
 DATA_ROOT = os.environ.get("PIPELINE_DATA_ROOT") or os.path.normpath(
     os.path.join(os.path.dirname(os.path.abspath(__file__)), "..", "..", "data_for_upload"))
 
-MEAN_IMG_DIR = os.path.join(DATA_ROOT, "01_suite2p_preprocessing", "mean_images")
-STAGE1_DIR = os.path.join(DATA_ROOT, "02_functional_to_structural_registration", "stage1_ministack")
-ALIGNED_DIR = os.path.join(STAGE1_DIR, "aligned_planes")
-OUT_DIR = STAGE1_DIR
+MEAN_IMG_DIR = os.path.join(DATA_ROOT, "mean_images")
+ALIGNED_DIR = os.path.join(DATA_ROOT, "aligned_planes")
+OUT_DIR = DATA_ROOT
 OUT_PATH = os.path.join(OUT_DIR, "functional_ministack.nii.gz")
 
 USE_ALIGNED_PLANES = os.environ.get("USE_ALIGNED_PLANES", "0") == "1"

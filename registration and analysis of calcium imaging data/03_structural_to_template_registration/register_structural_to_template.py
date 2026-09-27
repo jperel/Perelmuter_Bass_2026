@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 """
-Stage 3 (of 6) - structural-to-template registration: main registration.
+Stage 3 (of 5) - structural-to-template registration: main registration.
 
 Registers the RAS-converted structural stack to the population-average reference
 template using 19 manually-placed landmark pairs to seed a full 12-DOF affine, followed
@@ -47,19 +47,22 @@ edge-hugging Jacobian artifact: the fraction of the brain with |Jacobian determi
 regardless of how many iterations accumulate pull toward the same edge, and dropped that
 fraction to 0.84%, with the whole-frame midline curvature check also improved.
 
-Reads (all under DATA_ROOT/03_structural_to_template_registration/):
-  stage0_geometry_fixed/template_ras.nii.gz        (fixed)
-  stage0_geometry_fixed/02F_stack_ras_cropped.nii.gz  (moving)
-  stage0_geometry_fixed/mask_ras_cropped.nii.gz       (moving mask)
+Reads (all directly under DATA_ROOT):
+  template_ras.nii.gz        (fixed)
+  02F_stack_ras_cropped.nii.gz  (moving)
+  mask_ras_cropped.nii.gz       (moving mask)
   landmarks.csv
 
-Writes (all under DATA_ROOT/03_structural_to_template_registration/stage1_registration/):
+Writes (all directly under DATA_ROOT):
   landmark_affine.mat
   fwd_0GenericAffine.mat, fwd_1Warp.nii.gz, fwd_1InverseWarp.nii.gz  (SyN outputs)
   structural_in_template_space.nii.gz  (full-resolution QC volume)
 
 Run order in this stage: fix_template_geometry.py -> register_structural_to_template.py
 -> qc_overlay.py.
+
+Note on data layout: `data_for_upload/` is a flat folder (Zenodo does not
+preserve directory structure on upload); see the top-level README.
 
 Environment: antspy env (ants, nibabel, numpy, scipy, scikit-image, tifffile).
 """
@@ -79,14 +82,12 @@ ants.config.set_ants_deterministic(True, seed_value=SEED)
 DATA_ROOT = os.environ.get("PIPELINE_DATA_ROOT") or os.path.normpath(
     os.path.join(os.path.dirname(os.path.abspath(__file__)), "..", "..", "data_for_upload"))
 
-STAGE_DIR = os.path.join(DATA_ROOT, "03_structural_to_template_registration")
-GEOM_DIR = os.path.join(STAGE_DIR, "stage0_geometry_fixed")
-OUT_DIR = os.path.join(STAGE_DIR, "stage1_registration")
-LANDMARKS_CSV = os.path.join(STAGE_DIR, "landmarks.csv")
+OUT_DIR = DATA_ROOT
+LANDMARKS_CSV = os.path.join(DATA_ROOT, "landmarks.csv")
 
-FIXED_PATH = os.path.join(GEOM_DIR, "template_ras.nii.gz")
-MOVING_PATH = os.path.join(GEOM_DIR, "02F_stack_ras_cropped.nii.gz")
-MOVING_MASK_PATH = os.path.join(GEOM_DIR, "mask_ras_cropped.nii.gz")
+FIXED_PATH = os.path.join(DATA_ROOT, "template_ras.nii.gz")
+MOVING_PATH = os.path.join(DATA_ROOT, "02F_stack_ras_cropped.nii.gz")
+MOVING_MASK_PATH = os.path.join(DATA_ROOT, "mask_ras_cropped.nii.gz")
 
 WORKING_SPACING_UM = 4.0
 

@@ -2,7 +2,7 @@
 """
 run_suite2p_batch.py
 ======================
-Stage 1 of 6 (suite2p preprocessing) -- step 2 of 3 in this folder.
+Stage 1 of 5 (suite2p preprocessing) -- step 2 of 3 in this folder.
 
 Runs suite2p (motion correction + ROI detection + trace extraction)
 independently on each of the 36 single-plane functional recordings. Each
@@ -17,11 +17,13 @@ Reads:
     public data release).
 
 Writes:
-    data_for_upload/06_calcium_region_analysis/suite2p_output/<name>/suite2p/plane0/
+    data_for_upload/suite2p_output/<name>/suite2p/plane0/
     (F.npy, Fneu.npy, spks.npy, stat.npy, iscell.npy, ops.npy), one folder per
     input recording. This is suite2p's own output tree; it is consumed both by
-    the calcium/region analysis in stage 6 and by export_mean_images.py (the
+    the calcium/region analysis in stage 5 and by export_mean_images.py (the
     next script in this folder), which reads ops["meanImg"] from it.
+    (data_for_upload/ is a flat folder -- Zenodo does not preserve directory
+    structure on upload; see the top-level README.)
 
 Run order in this folder:
     1. convert_oir_to_tiff.py
@@ -60,8 +62,10 @@ HERE = os.path.dirname(os.path.abspath(__file__))
 # Not part of the public data release; override with FUNCTIONAL_TIFF_DIR if needed.
 TIFF_DIR = os.environ.get("FUNCTIONAL_TIFF_DIR", os.path.join(HERE, "functional_z-planes_tiff"))
 
-# suite2p's raw output tree is published as part of stage 6's data.
-OUT_BASE = os.path.join(DATA_ROOT, "06_calcium_region_analysis", "suite2p_output")
+# suite2p's raw output tree is published (as suite2p_output.zip) in the data package.
+# data_for_upload/ is flat (Zenodo does not preserve directory structure on upload);
+# see the top-level README.
+OUT_BASE = os.path.join(DATA_ROOT, "suite2p_output")
 
 FS = 1000.0 / 813.89  # frame interval measured from OME metadata (see docstring)
 TAU = 3.8

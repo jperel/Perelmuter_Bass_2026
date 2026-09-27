@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 """
-Stage 3 (of 6) - structural-to-template registration: template geometry fix.
+Stage 3 (of 5) - structural-to-template registration: template geometry fix.
 
 Produces the canonical `template_ras.nii.gz` used as the fixed/reference volume for
 every registration in this stage, by taking the (deghosted) population-average template
@@ -24,12 +24,15 @@ provenance/documentation of the exact geometry-fix logic that produced the shipp
 template, not as a step you need to re-run: the output below is provided directly.
 
 Output:
-  data_for_upload/03_structural_to_template_registration/stage0_geometry_fixed/template_ras.nii.gz
+  data_for_upload/template_ras.nii.gz
 
 Run order in this stage: fix_template_geometry.py -> register_structural_to_template.py
 -> qc_overlay.py. (The structural-side counterparts of this file,
 02F_stack_ras_cropped.nii.gz and mask_ras_cropped.nii.gz, are provided directly for the
 same reason -- see README.md.)
+
+Note on data layout: `data_for_upload/` is a flat folder (Zenodo does not
+preserve directory structure on upload); see the top-level README.
 
 Environment: antspy env (ants, nibabel, numpy, scipy, scikit-image, tifffile).
 """
@@ -42,8 +45,7 @@ import nibabel as nib
 DATA_ROOT = os.environ.get("PIPELINE_DATA_ROOT") or os.path.normpath(
     os.path.join(os.path.dirname(os.path.abspath(__file__)), "..", "..", "data_for_upload"))
 
-STAGE_DIR = os.path.join(DATA_ROOT, "03_structural_to_template_registration")
-OUT = os.path.join(STAGE_DIR, "stage0_geometry_fixed", "template_ras.nii.gz")
+OUT = os.path.join(DATA_ROOT, "template_ras.nii.gz")
 
 # Template-construction intermediates upstream of this pipeline (not included in this
 # release). Override with the environment variables below if you are re-deriving the

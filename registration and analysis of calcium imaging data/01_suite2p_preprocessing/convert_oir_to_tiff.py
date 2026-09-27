@@ -2,7 +2,7 @@
 """
 convert_oir_to_tiff.py
 ========================
-Stage 1 of 6 (suite2p preprocessing) -- step 1 of 3 in this folder.
+Stage 1 of 5 (suite2p preprocessing) -- step 1 of 3 in this folder.
 
 Converts the 36 single-plane Olympus .oir functional recordings to TIFF stacks
 that suite2p can read natively (suite2p.io has no OIR reader). Each recording

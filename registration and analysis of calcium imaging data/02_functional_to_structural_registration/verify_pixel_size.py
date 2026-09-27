@@ -2,7 +2,7 @@
 """
 verify_pixel_size.py
 ======================
-Stage 2 of 6 (functional-to-structural registration) -- Step 0.
+Stage 2 of 5 (functional-to-structural registration) -- Step 0.
 
 Standalone verification utility. Re-derives the functional 2P camera's true
 physical pixel size directly from the OME-XML metadata embedded in the raw

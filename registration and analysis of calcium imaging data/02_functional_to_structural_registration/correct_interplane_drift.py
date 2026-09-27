@@ -2,7 +2,7 @@
 """
 correct_interplane_drift.py
 ==============================
-Stage 2 of 6 (functional-to-structural registration) -- Step 1a, run before
+Stage 2 of 5 (functional-to-structural registration) -- Step 1a, run before
 build_functional_ministack.py.
 
 Suite2p's own registration corrects XY motion WITHIN each of the 36
@@ -27,15 +27,17 @@ plane. The log is itself useful QC: a physically real stage-drift correction
 should be small and vary smoothly plane-to-plane, not erratically.
 
 Reads:
-  - data_for_upload/01_suite2p_preprocessing/mean_images/meanImg_z*.tif (36 files)
+  - data_for_upload/mean_images/meanImg_z*.tif (36 files)
 
 Writes:
-  - data_for_upload/02_functional_to_structural_registration/stage1_ministack/
-    aligned_planes/meanImg_z*.tif
-  - data_for_upload/02_functional_to_structural_registration/stage1_ministack/
-    aligned_planes_valid_mask/meanImg_z*.tif
-  - data_for_upload/02_functional_to_structural_registration/stage1_ministack/
-    interplane_drift_log.txt
+  - data_for_upload/aligned_planes/meanImg_z*.tif
+  - data_for_upload/aligned_planes_valid_mask/meanImg_z*.tif
+  - data_for_upload/interplane_drift_log.txt
+
+Note on data layout: `data_for_upload/` is a flat folder (Zenodo does not
+preserve directory structure on upload), except for `mean_images/`,
+`roi_labels/`, and `suite2p_output/`, which come from unzipping the three
+archives shipped in the data package -- see the top-level README.
 
 Environment: antspy env (ants, numpy, tifffile).
 """
@@ -51,11 +53,10 @@ import tifffile
 DATA_ROOT = os.environ.get("PIPELINE_DATA_ROOT") or os.path.normpath(
     os.path.join(os.path.dirname(os.path.abspath(__file__)), "..", "..", "data_for_upload"))
 
-MEAN_IMG_DIR = os.path.join(DATA_ROOT, "01_suite2p_preprocessing", "mean_images")
-STAGE1_DIR = os.path.join(DATA_ROOT, "02_functional_to_structural_registration", "stage1_ministack")
-OUT_DIR = os.path.join(STAGE1_DIR, "aligned_planes")
-MASK_DIR = os.path.join(STAGE1_DIR, "aligned_planes_valid_mask")
-LOG_PATH = os.path.join(STAGE1_DIR, "interplane_drift_log.txt")
+MEAN_IMG_DIR = os.path.join(DATA_ROOT, "mean_images")
+OUT_DIR = os.path.join(DATA_ROOT, "aligned_planes")
+MASK_DIR = os.path.join(DATA_ROOT, "aligned_planes_valid_mask")
+LOG_PATH = os.path.join(DATA_ROOT, "interplane_drift_log.txt")
 
 XY_SPACING_UM = 1.40625
 

@@ -1,4 +1,4 @@
-# Stage 1 of 6: suite2p preprocessing
+# Stage 1 of 5: suite2p preprocessing
 
 Converts raw Olympus .oir 2-photon recordings to TIFF, runs suite2p
 (motion correction + ROI detection + trace extraction) independently on each
@@ -35,18 +35,25 @@ outputs in place.
   copy of the raw `.oir` files to reproduce this step.
 - `run_suite2p_batch.py` reads the TIFFs from the same `FUNCTIONAL_TIFF_DIR`
   and writes suite2p's output tree to
-  `data_for_upload/06_calcium_region_analysis/suite2p_output/<recording_name>/suite2p/plane0/`.
-  This output is shared with, and consumed by, the stage 6
+  `data_for_upload/suite2p_output/<recording_name>/suite2p/plane0/`.
+  This output is shared with, and consumed by, the stage 5
   (calcium/region analysis) scripts.
 - `export_mean_images.py` reads `ops.npy` from that same suite2p output tree
-  and writes `data_for_upload/01_suite2p_preprocessing/mean_images/meanImg_z<depth>.tif`
+  and writes `data_for_upload/mean_images/meanImg_z<depth>.tif`
   (36 files), which are consumed by stage 2
   (functional-to-structural registration).
 
 All scripts resolve the shared data root the same way (`PIPELINE_DATA_ROOT`
 environment variable if set, otherwise `<repo>/data_for_upload` next to
-`<repo>/code`), and build every published path under it with
-`os.path.join(DATA_ROOT, "<stage-folder-name>", ...)`.
+`<repo>/code`). **`data_for_upload/` is a flat folder** -- Zenodo does not
+preserve directory structure on upload, so every file in the data package
+lives directly in `data_for_upload/`, addressed only by filename, with three
+exceptions: `mean_images/`, `roi_labels/`, and `suite2p_output/` are
+subfolders created locally by unzipping the three `.zip` archives in the
+data package (see the top-level README), and `outputs/` / `qc/` are
+subfolders scripts create locally for their own generated results (not part
+of the Zenodo upload). Scripts build paths with `os.path.join(DATA_ROOT, ...)`
+directly against filenames, not stage-numbered subfolders.
 
 ## Environments / packages
 
@@ -77,7 +84,7 @@ environment variable if set, otherwise `<repo>/data_for_upload` next to
 
 ## Data included in this release
 
-`data_for_upload/01_suite2p_preprocessing/mean_images/meanImg_z<depth>.tif`
-(36 files) -- the suite2p-registered mean image for each z-plane, saved as
-float32 with no rescaling/clipping, so pixel intensities remain quantitatively
-meaningful.
+`data_for_upload/mean_images/meanImg_z<depth>.tif` (36 files, shipped as
+`mean_images.zip` -- unzip in place before running any script) -- the
+suite2p-registered mean image for each z-plane, saved as float32 with no
+rescaling/clipping, so pixel intensities remain quantitatively meaningful.

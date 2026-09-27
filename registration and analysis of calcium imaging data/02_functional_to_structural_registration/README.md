@@ -1,9 +1,9 @@
-# Stage 2 of 6: functional-to-structural registration
+# Stage 2 of 5: functional-to-structural registration
 
 Registers the 36 native functional (2P GCaMP) z-planes, treated as one
 coherent 3D mini-stack, into the native space of a separate, higher-SNR
 structural stack acquired from the same fish. Runs after Stage 1 (needs its
-`mean_images/` output) and its output feeds Stage 5 (ROI pullback).
+`mean_images/` output) and its output feeds Stage 4 (ROI pullback).
 
 Internally referred to as "Stage B" in the scripts and comments below (the
 functional-stack-to-template registration in Stage 3 is "Stage A" in the same
@@ -18,13 +18,12 @@ DATA_ROOT = os.environ.get("PIPELINE_DATA_ROOT") or os.path.normpath(
     os.path.join(os.path.dirname(os.path.abspath(__file__)), "..", "..", "data_for_upload"))
 ```
 
-Relevant subfolders:
-
-- `data_for_upload/01_suite2p_preprocessing/mean_images/` (input, from Stage 1)
-- `data_for_upload/02_functional_to_structural_registration/stage1_ministack/` (this stage)
-- `data_for_upload/02_functional_to_structural_registration/stage2_registration/` (this stage)
-- `data_for_upload/02_functional_to_structural_registration/stage2_reference/` (this stage; fixed optimizer seed)
-- `data_for_upload/03_structural_to_template_registration/stage0_geometry_fixed/` (input, from Stage 3)
+**`data_for_upload/` is a flat folder** -- Zenodo does not preserve directory
+structure on upload, so every individual file in the data package (from this
+stage or any other) is addressed directly by filename under `DATA_ROOT`, with
+no stage-numbered subfolders. The one exception relevant to this stage:
+`mean_images/` (input, from Stage 1) is a subfolder created locally by
+unzipping `mean_images.zip`.
 
 ## Run order
 
@@ -43,9 +42,8 @@ Relevant subfolders:
    adjacent planes (10um apart), anchored at the middle plane and propagated
    outward in both directions, and applies the 90-degree CCW rotation needed
    to match the structural stack's orientation.
-   Reads: `01_suite2p_preprocessing/mean_images/meanImg_z*.tif`.
-   Writes: `stage1_ministack/aligned_planes/`, `stage1_ministack/aligned_planes_valid_mask/`,
-   `stage1_ministack/interplane_drift_log.txt`.
+   Reads: `mean_images/meanImg_z*.tif`.
+   Writes: `aligned_planes/`, `aligned_planes_valid_mask/`, `interplane_drift_log.txt`.
 
 3. **build_functional_ministack.py** -- Step 1. Stacks the 36 mean images
    into one 3D NIfTI (spacing 1.40625 x 1.40625 x 10.0 um; array axis order
@@ -54,39 +52,38 @@ Relevant subfolders:
    `USE_ALIGNED_PLANES=1` to build from Step 1a's drift-corrected planes
    instead of the raw mean images directly -- the shipped
    `functional_ministack.nii.gz` was built this way (run step 2 first).
-   Writes: `stage1_ministack/functional_ministack.nii.gz`, `stage1_ministack/depths_um.txt`.
+   Writes: `functional_ministack.nii.gz`, `depths_um.txt`.
 
 4. **sanity_check_step1.py** -- visual check before any automated fit: plots
    a functional plane against candidate structural slices at matched physical
    scale, to catch a flip/rotation/scale error by eye.
-   Writes: `stage1_ministack/sanity_check.png`.
+   Writes: `sanity_check.png`.
 
 5. **build_ministack_mask.py** -- stacks the per-plane valid-data masks from
    step 2 into a mask NIfTI with the same geometry as the ministack. Used as
    `moving_mask` in the ANTs registration so drift-correction's ragged empty
    borders don't corrupt the correlation metric.
-   Writes: `stage1_ministack/functional_ministack_mask.nii.gz` (intermediate,
-   not distributed -- cheaply regenerated from step 2's output).
+   Writes: `functional_ministack_mask.nii.gz` (intermediate, not distributed
+   -- cheaply regenerated from step 2's output).
 
 6. **register_ministack_to_structural.py** -- Step 2. Registers the 36-plane
    ministack into the structural stack's native space as ONE 3D
    volume-to-volume fit (Rigid seeding an Affine), not 36 independent
    per-plane fits. Seeded from a fixed reference transform
-   (`stage2_reference/reference_affine.mat`, the near-identity result of
-   registering the *uncorrected* ministack, which converges reliably on its
-   own) because a blind search on the drift-corrected data repeatedly
-   converged to a wrong rotation. Defines `compute_seed_origin`, imported by
-   step 7 below and by Stage 5's `pull_roi_labels.py` -- its name and
-   signature must not change.
-   Writes: `stage2_registration/fwd_final_affine.mat` (the accepted result),
-   plus intermediate seeded volumes and ANTs transform files, and
-   `stage2_registration/ministack_in_structural_space.nii.gz` (full-resolution
-   warped ministack, for visual QC only).
+   (`reference_affine.mat`, the near-identity result of registering the
+   *uncorrected* ministack, which converges reliably on its own) because a
+   blind search on the drift-corrected data repeatedly converged to a wrong
+   rotation. Defines `compute_seed_origin`, imported by step 7 below and by
+   Stage 4's `pull_roi_labels.py` -- its name and signature must not change.
+   Writes: `fwd_final_affine.mat` (the accepted result), plus intermediate
+   seeded volumes and ANTs transform files, and
+   `ministack_in_structural_space.nii.gz` (full-resolution warped ministack,
+   for visual QC only).
 
    **Important caveat for anyone consuming `fwd_final_affine.mat` directly**:
    the fitted affine includes a genuine rotation of roughly 19 degrees that
    mixes the Y and Z axes. A native functional plane therefore maps to a
-   *tilted* plane in structural space, not a flat z-slice. Stage 5 handles
+   *tilted* plane in structural space, not a flat z-slice. Stage 4 handles
    this correctly with a "tilted slab" technique (each native plane embedded
    as a true 1-voxel-thick 3D image at its own position, pulled through the
    full inverse transform chain in one `apply_transforms` call) -- a naive
@@ -102,13 +99,13 @@ Relevant subfolders:
    repeat of suite2p's repeating cell-blob pattern (confirmed at one depth:
    measured 6.9px, true offset approximately 54px). Imports
    `compute_seed_origin` from step 6 (same-folder import).
-   Writes: `stage2_registration/stageB_plane_corrections.csv` -- **this is the
-   file actually consumed downstream, by Stage 5's `pull_roi_labels.py`.**
+   Writes: `stageB_plane_corrections.csv` -- **this is the file actually
+   consumed downstream, by Stage 4's `pull_roi_labels.py`.**
 
 8. **diag_stageB_block_displacement.py** -- validation/QC companion to step
    7: dense measurement of the same residual across all 32 included planes
    via local block-matching (reliable here because both channels are the
-   same imaging modality). Writes `stage2_registration/diag_stageB_block_results.npy`
+   same imaging modality). Writes `diag_stageB_block_results.npy`
    (diagnostic only, not consumed by any downstream step).
 
 ## Environment
@@ -120,9 +117,9 @@ Relevant subfolders:
 
 ## Notes
 
-- 32 of the 36 native planes are carried through to Stage 5; the shallowest 4
+- 32 of the 36 native planes are carried through to Stage 4; the shallowest 4
   (z = 2440-2470) are excluded there due to an unresolved shallow-depth
   registration issue in that z-range, not handled by any script in this
   stage.
 - The excluded planes and the Stage B correction table's exclusion set
-  (`EXCLUDED_IDX = {0, 1, 2, 3}`) are consistent across this stage and Stage 5.
+  (`EXCLUDED_IDX = {0, 1, 2, 3}`) are consistent across this stage and Stage 4.

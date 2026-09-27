@@ -2,7 +2,7 @@
 """
 sanity_check_step1.py
 ========================
-Stage 2 of 6 (functional-to-structural registration) -- Step 1 visual check.
+Stage 2 of 5 (functional-to-structural registration) -- Step 1 visual check.
 
 Plots a mid-block functional plane next to several candidate structural-stack
 slices, all at matched physical (micron) scale via matplotlib's `extent`, so a
@@ -10,17 +10,17 @@ flip, rotation, or gross scale error would be visually obvious before any
 automated registration search is attempted.
 
 Reads:
-  - data_for_upload/02_functional_to_structural_registration/stage1_ministack/
-    functional_ministack.nii.gz
-  - data_for_upload/03_structural_to_template_registration/stage0_geometry_fixed/
-    02F_stack_ras_cropped.nii.gz
+  - data_for_upload/functional_ministack.nii.gz
+  - data_for_upload/02F_stack_ras_cropped.nii.gz
 
 Writes:
-  - data_for_upload/02_functional_to_structural_registration/stage1_ministack/
-    sanity_check.png
+  - data_for_upload/sanity_check.png
 
 Run order: after build_functional_ministack.py, before
 register_ministack_to_structural.py.
+
+Note on data layout: `data_for_upload/` is a flat folder (Zenodo does not
+preserve directory structure on upload); see the top-level README.
 
 Environment: antspy env (nibabel, numpy, matplotlib; see this stage's README
 for the full package list).
@@ -37,12 +37,9 @@ import numpy as np
 DATA_ROOT = os.environ.get("PIPELINE_DATA_ROOT") or os.path.normpath(
     os.path.join(os.path.dirname(os.path.abspath(__file__)), "..", "..", "data_for_upload"))
 
-MINISTACK_PATH = os.path.join(DATA_ROOT, "02_functional_to_structural_registration",
-                               "stage1_ministack", "functional_ministack.nii.gz")
-STRUCTURAL_PATH = os.path.join(DATA_ROOT, "03_structural_to_template_registration",
-                                "stage0_geometry_fixed", "02F_stack_ras_cropped.nii.gz")
-OUT_PNG = os.path.join(DATA_ROOT, "02_functional_to_structural_registration",
-                        "stage1_ministack", "sanity_check.png")
+MINISTACK_PATH = os.path.join(DATA_ROOT, "functional_ministack.nii.gz")
+STRUCTURAL_PATH = os.path.join(DATA_ROOT, "02F_stack_ras_cropped.nii.gz")
+OUT_PNG = os.path.join(DATA_ROOT, "sanity_check.png")
 
 
 def main():
